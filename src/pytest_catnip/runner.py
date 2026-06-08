@@ -3,7 +3,7 @@ import logging
 import pathlib
 import re
 import time
-from collections.abc import Callable, Coroutine
+from collections.abc import Awaitable, Callable, Coroutine
 from dataclasses import dataclass
 from typing import Any
 
@@ -37,6 +37,7 @@ def create_test_function(
         catnip_pipeline: Callable[[], Pipeline],
         autoconfirm_response: str,
         is_confirmation_question: Callable[[str], bool],
+        llm_judge_function: Callable[[str, str], Awaitable[tuple[bool, str]]],
     ) -> None:
         if case_data.skip:
             pytest.skip("Test case marked as skipped")
@@ -56,6 +57,7 @@ def create_test_function(
                 pipeline_factory=catnip_pipeline,
                 autoconfirm_response=autoconfirm_response,
                 is_confirmation_question=is_confirmation_question,
+                llm_judge_function=llm_judge_function,
                 overall_timeout=overall_timeout,
             )
         else:
@@ -64,6 +66,7 @@ def create_test_function(
                 pipeline_factory=catnip_pipeline,
                 autoconfirm_response=autoconfirm_response,
                 is_confirmation_question=is_confirmation_question,
+                llm_judge_function=llm_judge_function,
                 overall_timeout=overall_timeout,
             )
             request.node._catnip_attempts = [
@@ -84,6 +87,7 @@ async def _run_once(
     pipeline_factory: Callable[[], Any],
     autoconfirm_response: str,
     is_confirmation_question: Callable[[str], bool],
+    llm_judge_function: Callable[[str, str], Awaitable[tuple[bool, str]]],
     overall_timeout: float,
 ) -> tuple[list[tuple[TurnLogKind, str]], Exception | None]:
     """Run all phases once on a fresh pipeline. Returns (conv_log, exception_or_None)."""
@@ -144,7 +148,9 @@ async def _run_once(
                 )
 
                 if phase.expect_tools is None or triggered_tools == set(phase.expect_tools):
-                    _assert_post_phase(phase, phase_idx, case_data.source_path, triggered_tools, reply, flow_manager)
+                    await _assert_post_phase(
+                        phase, phase_idx, case_data.source_path, llm_judge_function, reply, flow_manager
+                    )
                     logger.debug(
                         "[%s] phase=%d ok  expected=%s called=%s",
                         case_data.name,
@@ -215,6 +221,7 @@ async def _run_reliability(
     pipeline_factory: Callable[[], Any],
     autoconfirm_response: str,
     is_confirmation_question: Callable[[str], bool],
+    llm_judge_function: Callable[[str, str], Awaitable[tuple[bool, str]]],
     overall_timeout: float,
 ) -> None:
     """Run the scenario N times on fresh pipelines, require at least M passes."""
@@ -230,6 +237,7 @@ async def _run_reliability(
             pipeline_factory=pipeline_factory,
             autoconfirm_response=autoconfirm_response,
             is_confirmation_question=is_confirmation_question,
+            llm_judge_function=llm_judge_function,
             overall_timeout=overall_timeout,
         )
         attempts.append(
@@ -276,11 +284,11 @@ def _raise_phase_failure(
     )
 
 
-def _assert_post_phase(
+async def _assert_post_phase(
     phase: CatnipTestPhaseData,
     phase_idx: int,
     case_path: pathlib.Path,
-    triggered_tools: set[str],
+    llm_judge_function: Callable[[str, str], Awaitable[tuple[bool, str]]],
     reply: str,
     flow_manager: object = None,  # CatnipFlowTracker or None; typed as object to avoid optional dep
 ) -> None:
@@ -290,6 +298,20 @@ def _assert_post_phase(
             raise AssertionError(
                 f"\n[{case_path}] Phase {phase_idx}: reply doesn't match {pattern!r}.\n  Reply: {reply[:300]!r}"
             )
+
+    judge_coros = []
+    for judge_prompt in phase.expect_llm_judge or []:
+        judge_coros.append(llm_judge_function(reply, judge_prompt))
+    if judge_coros:
+        results = await asyncio.gather(*judge_coros)
+        for passed, reason in results:
+            if not passed:
+                raise AssertionError(
+                    f"\n[{case_path}] Phase {phase_idx}: LLM judge failed.\n"
+                    f"  Judge prompt: {judge_prompt!r}\n"
+                    f"  Bot reply:   {reply!r}\n"
+                    f"  Judge reason: {reason!r}"
+                )
 
     if phase.expect_flow_state is not None:
         if flow_manager is None:
