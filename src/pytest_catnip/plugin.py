@@ -1,5 +1,5 @@
 import pathlib
-from collections.abc import Callable, Generator
+from collections.abc import Awaitable, Callable, Generator
 
 import pytest
 from _pytest.terminal import TerminalReporter
@@ -145,6 +145,43 @@ def is_confirmation_question() -> Callable[[str], bool]:
 
     def _default(text: str) -> bool:
         return text.rstrip().endswith("?")
+
+    return _default
+
+
+@pytest.fixture(scope="session")
+def llm_judge_function() -> Callable[[str, str], Awaitable[tuple[bool, str]]]:
+    r"""Fixture to evaluate whether the bot reply meets the test case expectation.
+
+    Returns an async function that takes (actual_reply, expected_judge_prompt)
+    and returns a tuple of (passed: bool, reason: str).
+
+    Override this in your conftest.py if you use `expect_llm_judge` in your YAML.
+
+    Example override:
+    ```python
+    @pytest.fixture(scope="session")
+    def llm_judge_function():
+        llm = OpenAIClient(api_key=...)
+
+        async def judge(actual_reply: str, expected: str) -> tuple[bool, str]:
+            # You can use Structured Outputs (JSON schema) here for reliability
+            resp = await llm.chat(messages=[
+                {"role": "system", "content": "You are a test judge. Evaluate the bot. Return JSON with 'passed' (boolean) and 'reason' (string)."},
+                {"role": "user", "content": f"Bot reply: {actual_reply}\\nExpectation: {expected}"}
+            ])
+            data = json.loads(resp.choices[0].message.content)
+            return data["passed"], data["reason"]
+
+        return judge
+    ```
+    """
+
+    async def _default(actual_reply: str, expected_judge_prompt: str) -> tuple[bool, str]:
+        raise NotImplementedError(
+            "To use 'expect_llm_judge' in your YAML test case, you must override the "
+            "'llm_judge_function' fixture in your conftest.py."
+        )
 
     return _default
 

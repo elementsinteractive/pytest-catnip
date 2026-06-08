@@ -1,0 +1,9 @@
+name: llm-judge-test
+description: Tests the integration of LLM-based judge assertions in catnip test cases.
+skip: false
+
+phases:
+  - send: "Hello! Tell me something interesting about cats."
+    expect_llm_judge:
+      - "The bot should provide an interesting fact about cats in its reply."
+      - "The bot does not mention the superbowl in its reply."
