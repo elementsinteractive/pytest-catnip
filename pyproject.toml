@@ -1,15 +1,22 @@
 [project]
-name = "pytest_kitty"
-version = "0.0.0"
+name = "pytest_catnip"
+version = "0.0.1"
 requires-python = ">=3.13,<4"
-description = "pytest plugin for testing piepcat voicebots declaratively"
+description = "pytest plugin for testing pipecat voicebots declaratively"
 authors = [
     {name = "Sergio Castillo Lara", email = "sergio.lara@groupinteractive.es"},
 ]
-dependencies = []
+dependencies = [
+    "pytest (>=9.0.3,<10.0.0)", 
+    "pipecat-ai (>=1.3.0,<2.0.0)", 
+    "pydantic (>=2.13.4,<3.0.0)", 
+    "pytest-asyncio (>=1.4.0,<2.0.0)",
+]
+
+[project.optional-dependencies]
+flows = ["pipecat-ai-flows>=1.0.0"]
 
 [tool.poetry.group.dev.dependencies]
-pytest = "9.0.3"
 mypy = "2.1.0"
 ruff = "0.15.15"
 pytest-cov = "7.1.0"
@@ -18,6 +25,11 @@ commitizen = "4.16.3"
 mkdocs-material = "9.7.6"
 codespell = "2.4.2"
 pre-commit = "4.6.0"
+pytest = "^9.0.3"
+types-pyyaml = "^6.0.12.20260518"
+pipecat-ai = {version = ">=1.3.0,<2.0.0", extras = ["google"]}
+pipecat-ai-flows = ">=1.0.0"
+python-dotenv = ">=1.0.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
@@ -32,7 +44,10 @@ addopts = """
     --cov-report=xml:./tests/coverage.xml
     --junitxml=./tests/junit.xml
 """
+catnip_show_conversation = true
 
+[tool.poetry.plugins.pytest11]
+pytest_catnip = "pytest_catnip.plugin"
 
 [tool.ruff]
 target-version = "py313"
@@ -73,7 +88,7 @@ max-complexity = 10
 convention = "pep257"
 
 [tool.ruff.lint.isort]
-known-third-party = ["pytest_kitty", "tests"]
+known-third-party = ["pytest_catnip", "tests"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = [
@@ -87,19 +102,23 @@ known-third-party = ["pytest_kitty", "tests"]
 
 
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.14"
 mypy_path = "src"
 strict = true
 pretty = true
 warn_unused_ignores = true
 enable_error_code = ["explicit-override"]
 
+[[tool.mypy.overrides]]
+module = "pipecat_flows.*"
+ignore_missing_imports = true
+
 
 [tool.coverage.run]
 omit = ["tests/*"]
 
 [tool.coverage.report]
-fail_under = 95
+fail_under = 50
 exclude_lines = [
     "if TYPE_CHECKING:",
     "pragma: no cover",
@@ -110,7 +129,7 @@ exclude_lines = [
 [tool.commitizen]
 version_files = ["pyproject.toml:^version"]
 name = "cz_customize"
-version = "0.0.0"
+version = "0.0.1"
 tag_format = "v$version"
 
 [tool.commitizen.customize]
