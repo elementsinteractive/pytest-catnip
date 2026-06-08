@@ -1,0 +1,12 @@
+name: reliability-example
+description: Reliability check — bot consistently answers basic arithmetic
+skip: false
+
+reliability:
+  runs: 3
+  min_pass: 3
+
+phases:
+  - send: "What is 7 plus 3?"
+    expect_reply_contains:
+      - "10"

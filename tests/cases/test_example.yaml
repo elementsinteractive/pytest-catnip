@@ -1,0 +1,12 @@
+name: example-test
+description: Basic sanity check — bot can reply to a greeting
+skip: false
+max_auto_confirm: 3
+
+phases:
+  - send: "Hello! What is 2 + 2?"
+    expect_reply_contains:
+      - "4"
+  - send: "and what is 3 + 5?"
+    expect_reply_contains:
+      - "8"
