@@ -213,7 +213,8 @@ class _CatnipConversationPlugin:
             tr.write_line(line, green=a.passed, red=not a.passed, bold=True)
             for entry_type, text in a.conv_log:
                 label = self._ENTRY_LABELS[entry_type]
-                tr.write_line(f"    {label}  {text}")
+                markup = self._ENTRY_MARKUP.get(entry_type, {})
+                tr.write_line(f"    {label}  {text}", **markup)
             if not a.passed and a.error:
                 tr.write_line(f"    ERROR  {a.error.splitlines()[0]}", red=True)
         passes = sum(1 for a in attempts if a.passed)
