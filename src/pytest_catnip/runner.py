@@ -86,6 +86,10 @@ def create_test_function(
     for marker_name in case_data.markers:
         marker_decorator = getattr(pytest.mark, marker_name)
         test_function = marker_decorator(test_function)
+
+    # Add fixtures requested by the test case
+    if case_data.fixtures:
+        test_function = pytest.mark.usefixtures(*case_data.fixtures)(test_function)
     return test_function
 
 
