@@ -58,3 +58,5 @@ class CatnipTestCaseData(BaseModel):
     phases: list[CatnipTestPhaseData]
     source_path: pathlib.Path
     reliability: ReliabilityConfig | None = None
+
+    expect_flow_nodes: list[str] | None = None

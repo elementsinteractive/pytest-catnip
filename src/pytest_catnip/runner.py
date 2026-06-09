@@ -5,7 +5,7 @@ import re
 import time
 from collections.abc import Awaitable, Callable, Coroutine
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from pipecat.pipeline.pipeline import Pipeline
@@ -13,6 +13,13 @@ from pipecat.pipeline.worker import PipelineWorker
 from pipecat.workers.runner import WorkerRunner
 from pytest_catnip.harness import CatnipSession, CatnipTurnTracker, TurnLogKind, _ToolCall
 from pytest_catnip.models import CatnipTestCaseData, CatnipTestPhaseData, ToolExpectation
+
+if TYPE_CHECKING:
+    from pytest_catnip.flows import CatnipFlowBundle, CatnipFlowTracker
+else:
+    # Avoid optional dependency on pipecat-ai-flows
+    CatnipFlowTracker = object
+    CatnipFlowBundle = object
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +91,7 @@ def create_test_function(
 
 async def _run_once(
     case_data: CatnipTestCaseData,
-    pipeline_factory: Callable[[], Any],
+    pipeline_factory: Callable[[], Pipeline | CatnipFlowBundle],
     autoconfirm_response: str,
     is_confirmation_question: Callable[[str], bool],
     llm_judge_function: Callable[[str, str], Awaitable[tuple[bool, str]]],
@@ -105,6 +112,11 @@ async def _run_once(
             pipeline = bundle
             _init_flow = None
     except ImportError:
+        if not isinstance(bundle, Pipeline):
+            raise pytest.UsageError(
+                f"[{case_data.name}] 'catnip_pipeline' fixture returned an unexpected type {type(bundle)}. "
+                f"Expected Pipeline or CatnipFlowBundle (for flow-state assertions)."
+            ) from None
         pipeline = bundle
         _init_flow = None
 
@@ -129,7 +141,7 @@ async def _run_once(
     await runner.add_workers(worker)
     runner_bg = asyncio.create_task(runner.run())
 
-    flow_manager: Any = None
+    flow_manager: CatnipFlowTracker | None = None
     if _init_flow is not None:
         flow_manager = await _init_flow(worker)
 
@@ -170,6 +182,7 @@ async def _run_once(
                         is_confirmation_question,
                     )
 
+            _assert_post_case(flow_manager, case_data.expect_flow_nodes)
             logger.debug("[%s] Scenario complete.", case_data.name)
 
     except Exception as e:  # noqa: BLE001
@@ -182,6 +195,7 @@ async def _run_once(
 
 
 async def _execute_phase_exchanges(
+    *,
     phase: CatnipTestPhaseData,
     phase_idx: int,
     case_data: CatnipTestCaseData,
@@ -329,7 +343,7 @@ async def _assert_post_phase(
     case_path: pathlib.Path,
     llm_judge_function: Callable[[str, str], Awaitable[tuple[bool, str]]],
     reply: str,
-    flow_manager: object = None,  # CatnipFlowTracker or None; typed as object to avoid optional dep
+    flow_manager: CatnipFlowTracker | None = None,
 ) -> None:
     """Run assertions that apply after a phase completes."""
     for pattern in phase.expect_reply_contains:
@@ -359,10 +373,24 @@ async def _assert_post_phase(
                 f"'catnip_pipeline' fixture to return a 'CatnipFlowBundle'. "
                 f"See pytest_catnip.flows for instructions."
             )
-        actual = getattr(flow_manager, "current_node", None)
-        if actual != phase.expect_flow_state:
+        if flow_manager.current_node != phase.expect_flow_state:
             history = getattr(flow_manager, "node_history", "unavailable")
             raise AssertionError(
                 f"\n[{case_path}] Phase {phase_idx}: expected flow state {phase.expect_flow_state!r}, "
-                f"got {actual!r}.\n  node_history: {history}"
+                f"got {flow_manager.current_node!r}.\n  node_history: {history}"
             )
+
+
+def _assert_post_case(flow_manager: CatnipFlowTracker | None, expect_flow_nodes: list[str] | None) -> None:
+    """Case-level assertions after all phases complete."""
+    if expect_flow_nodes is None:
+        return
+
+    if flow_manager is None:
+        raise pytest.UsageError(
+            "'expect_flow_nodes' requires the 'catnip_pipeline' fixture to return a 'CatnipFlowBundle'. "
+            "See pytest_catnip.flows for instructions."
+        )
+
+    if flow_manager.node_history != expect_flow_nodes:
+        raise AssertionError(f"Expected flow node history {expect_flow_nodes!r}, got {flow_manager.node_history!r}.")

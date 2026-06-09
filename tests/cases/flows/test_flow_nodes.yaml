@@ -1,0 +1,16 @@
+name: flow-state-transitions
+description: >
+  Verifies that expect_flow_state correctly tracks pipecat-flows node
+  transitions. Phase 1 stays in the greeting node. Phase 2 triggers the
+  say_farewell tool and asserts the flow moved to the farewell node.
+
+expect_flow_nodes: [greeting, farewell]
+
+phases:
+  - send: "Hello! What is 2 + 2?"
+    expect_reply_contains:
+      - "4"
+
+  - send: "Thanks, goodbye!"
+    expect_tools:
+      - say_farewell
