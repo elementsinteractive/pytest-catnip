@@ -34,10 +34,6 @@ class TurnLogKind(StrEnum):
     TOOL = "TOOL"
 
 
-# Backwards-compatible alias
-LogEntryType = TurnLogKind
-
-
 class CatnipTurnTracker(FrameProcessor):
     """Frame processor that signals when a complete LLM turn is ready.
 

@@ -1,5 +1,5 @@
-name: example-test
-description: Basic sanity check — bot can reply to a greeting
+name: basic
+description: Basic sanity check — bot can do simple arithmetic
 skip: false
 max_auto_confirm: 3
 
