@@ -38,6 +38,7 @@ test *test-args='': venv
 # Runs all tests including coverage report.
 test-all: venv
     {{ run }} coverage run -m pytest
+    {{ run }} coverage report
     {{ run }} coverage xml -o tests/coverage.xml
 
 # Format all code in the project.
