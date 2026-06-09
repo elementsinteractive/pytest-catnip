@@ -11,8 +11,8 @@ import pytest
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.worker import PipelineWorker
 from pipecat.workers.runner import WorkerRunner
-from pytest_catnip.harness import CatnipSession, CatnipTurnTracker, TurnLogKind
-from pytest_catnip.models import CatnipTestCaseData, CatnipTestPhaseData
+from pytest_catnip.harness import CatnipSession, CatnipTurnTracker, TurnLogKind, _ToolCall
+from pytest_catnip.models import CatnipTestCaseData, CatnipTestPhaseData, ToolExpectation
 
 logger = logging.getLogger(__name__)
 
@@ -137,7 +137,7 @@ async def _run_once(
     try:
         async with asyncio.timeout(overall_timeout):
             for phase_idx, phase in enumerate(case_data.phases):
-                reply, triggered_tools = await _execute_phase_exchanges(
+                reply, triggered_calls = await _execute_phase_exchanges(
                     phase=phase,
                     phase_idx=phase_idx,
                     case_data=case_data,
@@ -146,8 +146,8 @@ async def _run_once(
                     autoconfirm_response=autoconfirm_response,
                     is_confirmation_question=is_confirmation_question,
                 )
-
-                if phase.expect_tools is None or triggered_tools == set(phase.expect_tools):
+                failure = None if phase.expect_tools is None else _match_toolcalls(phase.expect_tools, triggered_calls)
+                if failure is None:
                     await _assert_post_phase(
                         phase, phase_idx, case_data.source_path, llm_judge_function, reply, flow_manager
                     )
@@ -156,15 +156,16 @@ async def _run_once(
                         case_data.name,
                         phase_idx,
                         phase.expect_tools,
-                        triggered_tools,
+                        triggered_calls,
                     )
                 else:
                     _raise_phase_failure(
                         case_data.source_path,
                         phase,
                         phase_idx,
-                        triggered_tools,
+                        triggered_calls,
                         reply,
+                        failure,
                         case_data.max_auto_confirm,
                         is_confirmation_question,
                     )
@@ -188,10 +189,10 @@ async def _execute_phase_exchanges(
     tracker: CatnipTurnTracker,
     autoconfirm_response: str,
     is_confirmation_question: Callable[[str], bool],
-) -> tuple[str, set[str]]:
+) -> tuple[str, list[_ToolCall]]:
     """Send the phase utterance, auto-confirming bot questions up to the budget.
 
-    Returns ``(final_reply, triggered_tool_names)``.
+    Returns ``(final_reply, triggered_tool_calls)``.
     """
     tools_snapshot = len(tracker.tool_calls)
     reply = await session.send(phase.send, timeout=case_data.turn_timeout)
@@ -211,8 +212,8 @@ async def _execute_phase_exchanges(
         reply = await session.send(autoconfirm_response, timeout=case_data.turn_timeout)
         logger.debug("[%s] phase=%d BOT (after confirm): %s", case_data.name, phase_idx, reply)
 
-    triggered_tools = {c.name for c in tracker.tool_calls[tools_snapshot:]}
-    return reply, triggered_tools
+    triggered_calls = list(tracker.tool_calls[tools_snapshot:])
+    return reply, triggered_calls
 
 
 async def _run_reliability(
@@ -261,12 +262,47 @@ async def _run_reliability(
         )
 
 
+def _tool_matches(expectation: ToolExpectation, call: _ToolCall) -> bool:
+    """Return True if *call* satisfies *expectation* (name + partial arg match)."""
+    if call.name != expectation.name:
+        return False
+    if expectation.args is None:
+        return True
+    return all(key in call.arguments and call.arguments[key] == value for key, value in expectation.args.items())
+
+
+def _match_toolcalls(
+    expectations: list[ToolExpectation],
+    triggered_calls: list[_ToolCall],
+) -> str | None:
+    """Validate triggered tool calls against expectations.
+
+    Returns ``None`` on success, otherwise a human-readable failure reason.
+
+    Rules:
+      * The set of called tool names must equal the set of expected names.
+      * Every expectation must be satisfied by at least one actual call, where
+        ``args`` is matched as a subset (partial) of the call's arguments.
+    """
+    expected_names = {e.name for e in expectations}
+    called_names = {c.name for c in triggered_calls}
+    if expected_names != called_names:
+        return f"tool name set mismatch — expected {sorted(expected_names)}, called {sorted(called_names)}"
+
+    for expectation in expectations:
+        if not any(_tool_matches(expectation, call) for call in triggered_calls):
+            return f"no call matched {expectation.name!r} with args {expectation.args!r}"
+
+    return None
+
+
 def _raise_phase_failure(
     case_path: pathlib.Path,
     phase: CatnipTestPhaseData,
     phase_idx: int,
-    triggered_tools: set[str],
+    triggered_calls: list[_ToolCall],
     reply: str,
+    reason: str,
     max_auto_confirm: int,
     is_confirmation_question: Callable[[str], bool],
 ) -> None:
@@ -275,11 +311,14 @@ def _raise_phase_failure(
         if not is_confirmation_question(reply)
         else f"  Hint: max auto-confirm budget ({max_auto_confirm}) exhausted — increase max_auto_confirm?\n"
     )
+    expected = [{"name": e.name, "args": e.args} for e in (phase.expect_tools or [])]
+    actual = [{"name": c.name, "args": c.arguments} for c in triggered_calls]
     raise AssertionError(
         f"\n[{case_path}] Phase {phase_idx} failed.\n"
+        f"  Reason:         {reason}\n"
         f"  Sent:           {phase.send!r}\n"
-        f"  Expected tools: {list(phase.expect_tools) if phase.expect_tools is not None else 'none'}\n"
-        f"  Tools called:   {list(triggered_tools)}\n"
+        f"  Expected tools: {expected}\n"
+        f"  Tools called:   {actual}\n"
         f"  Bot reply:      {reply}\n" + hint
     )
 

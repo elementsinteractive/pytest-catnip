@@ -1,0 +1,12 @@
+name: tool-args-exact
+description: >
+  Verifies expect_tools can assert the arguments a tool was called with.
+  The user asks for a large pizza, so order_pizza must be called with
+  size=large.
+
+phases:
+  - send: "I'd like to order a large pizza, please."
+    expect_tools:
+      - name: order_pizza
+        args:
+          size: large

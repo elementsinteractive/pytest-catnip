@@ -1,0 +1,13 @@
+name: tool-args-partial
+description: >
+  Verifies expect_tools argument matching is a partial (subset) match: the
+  user orders a small thin-crust pizza, but the case only asserts size=small.
+  The crust argument is present on the actual call but intentionally not
+  asserted, demonstrating that unlisted keys are ignored.
+
+phases:
+  - send: "Can I get a small thin-crust pizza?"
+    expect_tools:
+      - name: order_pizza
+        args:
+          size: small

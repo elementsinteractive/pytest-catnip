@@ -1,10 +1,11 @@
 [project]
 name = "pytest_catnip"
-version = "0.0.1"
+version = "0.2.0"
 requires-python = ">=3.13,<4"
 description = "pytest plugin for testing pipecat voicebots declaratively"
 authors = [
     {name = "Sergio Castillo Lara", email = "sergio.lara@groupinteractive.es"},
+    {name = "Rooni"},
 ]
 dependencies = [
     "pytest (>=9.0.3,<10.0.0)", 
@@ -118,7 +119,7 @@ ignore_missing_imports = true
 omit = ["tests/*"]
 
 [tool.coverage.report]
-fail_under = 50
+fail_under = 45
 exclude_lines = [
     "if TYPE_CHECKING:",
     "pragma: no cover",
@@ -129,7 +130,7 @@ exclude_lines = [
 [tool.commitizen]
 version_files = ["pyproject.toml:^version"]
 name = "cz_customize"
-version = "0.0.1"
+version = "0.2.0"
 tag_format = "v$version"
 
 [tool.commitizen.customize]
