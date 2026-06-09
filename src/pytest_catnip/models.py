@@ -54,9 +54,13 @@ class CatnipTestCaseData(BaseModel):
     max_auto_confirm: Annotated[int, Field(ge=0)] = 3
     turn_timeout: Annotated[int, Field(ge=0)] = 15
     skip: bool = False
-    markers: list[str] = []
     phases: list[CatnipTestPhaseData]
     source_path: pathlib.Path
     reliability: ReliabilityConfig | None = None
 
+    # Pytest integration
+    markers: list[str] = []
+    fixtures: list[str] = []
+
+    # Expectations
     expect_flow_nodes: list[str] | None = None

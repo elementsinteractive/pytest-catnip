@@ -1,0 +1,11 @@
+name: fixtures
+description: Checks that fixtures are properly loaded and can be used in test cases
+skip: false
+fixtures: [mock_get_best_character]
+
+phases:
+  - send: "Who's the best character in Baldur's Gate 3?"
+    expect_reply_contains:
+      - "Astarion"
+    expect_tools:
+      - get_best_character
