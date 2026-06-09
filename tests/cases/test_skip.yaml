@@ -1,0 +1,8 @@
+name: skip-me
+description: This test is intentionally skipped. If skip is ever removed, it will fail loudly.
+skip: true
+
+phases:
+  - send: "Hello"
+    expect_reply_contains:
+      - "XTHIS_WILL_NEVER_MATCHX"

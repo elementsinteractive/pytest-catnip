@@ -5,7 +5,7 @@ import pytest
 from _pytest.terminal import TerminalReporter
 from pipecat.pipeline.pipeline import Pipeline
 from pytest_catnip.collector import CatnipFileCollector
-from pytest_catnip.harness import CatnipTurnTracker, TurnLogKind
+from pytest_catnip.harness import TurnLogKind
 from pytest_catnip.runner import _Attempt
 
 
@@ -121,7 +121,9 @@ def catnip_pipeline() -> Callable[[], Pipeline]:
     """
 
     def _default_factory() -> Pipeline:
-        return Pipeline([CatnipTurnTracker()])
+        raise NotImplementedError(
+            "To use 'pytest-catnip' you must override the 'catnip_pipeline' fixture in your conftest.py."
+        )
 
     return _default_factory
 

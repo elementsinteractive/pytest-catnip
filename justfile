@@ -1,5 +1,5 @@
-
 # VARIABLE DEFINITIONS
+
 venv := ".venv"
 bin := venv + "/bin"
 python_version := "python3.14"
@@ -7,6 +7,7 @@ run := "poetry run"
 target_dirs := "src tests"
 
 # SENTINELS
+
 venv-exists := path_exists(venv)
 
 # RECIPES
@@ -29,13 +30,15 @@ clean:
     @rm -rf {{ venv }}
 
 alias t := test
+
 # Runs the tests with the specified arguments (any path or pytest argument).
 test *test-args='': venv
     {{ run }} pytest {{ test-args }} --no-cov
 
 # Runs all tests including coverage report.
 test-all: venv
-    {{ run }} pytest
+    {{ run }} coverage run -m pytest
+    {{ run }} coverage xml -o tests/coverage.xml
 
 # Format all code in the project.
 format *files=target_dirs: venv
@@ -63,5 +66,3 @@ spellcheck *codespell-args: venv
 # Lints commit messages according to conventional commit rules.
 lint-commit: venv
     {{ run }} cz check --rev-range main..HEAD
-
-

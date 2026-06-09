@@ -1,6 +1,6 @@
 [project]
-name = "pytest_catnip"
-version = "0.2.0"
+name = "pytest-catnip"
+version = "0.3.0"
 requires-python = ">=3.13,<4"
 description = "pytest plugin for testing pipecat voicebots declaratively"
 authors = [
@@ -16,6 +16,9 @@ dependencies = [
 
 [project.optional-dependencies]
 flows = ["pipecat-ai-flows>=1.0.0"]
+
+[project.entry-points.pytest11]
+pytest_catnip = "pytest_catnip.plugin"
 
 [tool.poetry.group.dev.dependencies]
 mypy = "2.1.0"
@@ -39,16 +42,16 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 addopts = """
-    -s
-    --cov
-    --cov-report term-missing
-    --cov-report=xml:./tests/coverage.xml
     --junitxml=./tests/junit.xml
 """
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
 catnip_show_conversation = true
+asyncio_default_fixture_loop_scope = "function"
+asyncio_default_test_loop_scope = "function"
 
-[tool.poetry.plugins.pytest11]
-pytest_catnip = "pytest_catnip.plugin"
+
 
 [tool.ruff]
 target-version = "py313"
@@ -116,10 +119,11 @@ ignore_missing_imports = true
 
 
 [tool.coverage.run]
+source = ["src/pytest_catnip"]
 omit = ["tests/*"]
 
 [tool.coverage.report]
-fail_under = 45
+fail_under = 80
 exclude_lines = [
     "if TYPE_CHECKING:",
     "pragma: no cover",
@@ -130,7 +134,7 @@ exclude_lines = [
 [tool.commitizen]
 version_files = ["pyproject.toml:^version"]
 name = "cz_customize"
-version = "0.2.0"
+version = "0.3.0"
 tag_format = "v$version"
 
 [tool.commitizen.customize]
