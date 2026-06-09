@@ -66,7 +66,7 @@ class CatnipTurnTracker(FrameProcessor):
             names = [f.function_name for f in frame.function_calls]
             self._inflight += len(frame.function_calls)
             for fc in frame.function_calls:
-                self.tool_calls.append(_ToolCall(name=fc.function_name))
+                self.tool_calls.append(_ToolCall(name=fc.function_name, arguments=dict(fc.arguments or {})))
             logger.debug("[tracker] tool calls started: %s (inflight=%d)", names, self._inflight)
 
         elif isinstance(frame, FunctionCallResultFrame):
@@ -144,5 +144,6 @@ class CatnipSession:
         logger.debug("[session] BOT  <- (%.1fs) %r", elapsed, reply)
         self.transcript.append((TurnLogKind.BOT, reply))
         for call in self._tracker.tool_calls[tools_before:]:
-            self.transcript.append((TurnLogKind.TOOL, call.name))
+            entry = f"{call.name} {call.arguments}" if call.arguments else call.name
+            self.transcript.append((TurnLogKind.TOOL, entry))
         return reply

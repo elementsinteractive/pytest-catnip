@@ -1,14 +1,39 @@
 import pathlib
-from typing import Annotated
+from typing import Annotated, Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+
+class ToolExpectation(BaseModel):
+    """Expectation for a single tool call within a phase.
+
+    Entries in ``expect_tools`` may be a plain tool name (string) or an object
+    with a ``name`` and optional ``args``. ``args`` is matched as a *partial*
+    (subset) match against the arguments the tool was actually called with: only
+    the keys listed here are checked, and each value must compare equal to the
+    corresponding actual argument. When ``args`` is ``None`` only the tool name
+    is asserted.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    args: dict[str, Any] | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_shorthand(cls, value: Any) -> Any:  # noqa: ANN401
+        # Allow a plain string entry as shorthand for ``{"name": <string>}``.
+        if isinstance(value, str):
+            return {"name": value}
+        return value
 
 
 class CatnipTestPhaseData(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     send: str
-    expect_tools: list[str] | None = None
+    expect_tools: list[ToolExpectation] | None = None
     expect_reply_contains: list[str] = []
     expect_llm_judge: list[str] | None = None
     expect_flow_state: str | None = None
