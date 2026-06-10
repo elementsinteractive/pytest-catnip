@@ -1,7 +1,6 @@
 name: basic
 description: Basic sanity check — bot can do simple arithmetic
 skip: false
-max_auto_confirm: 3
 
 phases:
   - send: "Hello! What is 2 + 2?"
