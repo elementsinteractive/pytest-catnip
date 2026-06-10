@@ -1,18 +1,17 @@
 {
   "template": "git@gitlab.com:namespace/group/backend/pypackage-skeleton.git",
-  "commit": "9b315324422a8c51eb8ad66f30fce044c44a685f",
+  "commit": "3f498074629558a522cc3ac581be43145233dab8",
   "checkout": null,
   "context": {
     "cookiecutter": {
-      "name": "pytest-kitty",
-      "slug": "pytest_kitty",
-      "repo_path": "sandbox/pytest-kitty",
+      "name": "pytest-catnip",
+      "slug": "pytest_catnip",
+      "repo_path": "sandbox/pytest-catnip",
       "author_name": "Sergio Castillo Lara",
       "author_email": "sergio.lara@groupinteractive.es",
       "description": "pytest plugin for testing piepcat voicebots declaratively",
       "use_renovate": "yes",
-      "_template": "git@gitlab.com:namespace/group/backend/pypackage-skeleton.git",
-      "_commit": "9b315324422a8c51eb8ad66f30fce044c44a685f"
+      "_template": "git@gitlab.com:namespace/group/backend/pypackage-skeleton.git"
     }
   },
   "directory": null
