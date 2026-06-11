@@ -21,7 +21,7 @@ venv:
     @if ! {{ venv-exists }}; \
     then \
     POETRY_VIRTUALENVS_IN_PROJECT=1 poetry env use {{ python_version }}; \
-    poetry install; \
+    poetry install --all-extras; \
     fi
 
 # Cleans all artifacts generated while running this project, including the virtualenv.
