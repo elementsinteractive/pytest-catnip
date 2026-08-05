@@ -11,13 +11,13 @@ from collections.abc import Callable
 
 import pytest
 from dotenv import load_dotenv
+from pipecat.flows import FlowManager, FlowsFunctionSchema
+from pipecat.flows.types import FlowArgs, NodeConfig
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.worker import PipelineWorker
 from pipecat.processors.aggregators.llm_context import LLMContext
 from pipecat.processors.aggregators.llm_response_universal import LLMContextAggregatorPair
 from pipecat.services.google.llm import GoogleLLMService
-from pipecat_flows import FlowManager, FlowsFunctionSchema
-from pipecat_flows.types import FlowArgs, NodeConfig
 from pytest_catnip import CatnipTurnTracker
 from pytest_catnip.flows import CatnipFlowBundle, CatnipFlowTracker
 
