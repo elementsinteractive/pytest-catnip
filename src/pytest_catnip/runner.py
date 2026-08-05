@@ -5,21 +5,15 @@ import re
 import time
 from collections.abc import Awaitable, Callable, Coroutine
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import pytest
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.worker import PipelineWorker
 from pipecat.workers.runner import WorkerRunner
+from pytest_catnip.flows import CatnipFlowBundle, CatnipFlowTracker
 from pytest_catnip.harness import CatnipSession, CatnipTurnTracker, TurnLogKind, _ToolCall
 from pytest_catnip.models import CatnipTestCaseData, CatnipTestPhaseData, ToolExpectation
-
-if TYPE_CHECKING:
-    from pytest_catnip.flows import CatnipFlowBundle, CatnipFlowTracker
-else:
-    # Avoid optional dependency on pipecat-ai-flows
-    CatnipFlowTracker = object
-    CatnipFlowBundle = object
 
 logger = logging.getLogger(__name__)
 
@@ -104,23 +98,10 @@ async def _run_once(
     """Run all phases once on a fresh pipeline. Returns (conv_log, exception_or_None)."""
     bundle = pipeline_factory()
 
-    # Support CatnipFlowBundle (pipecat-flows integration) or a plain Pipeline.
-    # The import is lazy so pipecat-ai-flows remains an optional dependency.
-    try:
-        from pytest_catnip.flows import CatnipFlowBundle
-
-        if isinstance(bundle, CatnipFlowBundle):
-            pipeline: Pipeline = bundle.pipeline
-            _init_flow = bundle.init_flow
-        else:
-            pipeline = bundle
-            _init_flow = None
-    except ImportError:
-        if not isinstance(bundle, Pipeline):
-            raise pytest.UsageError(
-                f"[{case_data.name}] 'catnip_pipeline' fixture returned an unexpected type {type(bundle)}. "
-                f"Expected Pipeline or CatnipFlowBundle (for flow-state assertions)."
-            ) from None
+    if isinstance(bundle, CatnipFlowBundle):
+        pipeline = bundle.pipeline
+        _init_flow = bundle.init_flow
+    else:
         pipeline = bundle
         _init_flow = None
 

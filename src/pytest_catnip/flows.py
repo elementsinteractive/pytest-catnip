@@ -4,19 +4,13 @@ import dataclasses
 from collections.abc import Awaitable, Callable
 from typing import Any, override
 
+from pipecat.flows import FlowManager
+from pipecat.flows.types import NodeConfig
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.worker import PipelineWorker
 
-try:
-    from pipecat_flows import FlowManager
-    from pipecat_flows.types import NodeConfig
-except ImportError as exc:
-    raise ImportError(
-        "pytest-catnip[flows] requires pipecat-ai-flows. Install it with: pip install pipecat-ai-flows"
-    ) from exc
 
-
-class CatnipFlowTracker(FlowManager):  # type: ignore[misc]
+class CatnipFlowTracker(FlowManager):
     """``FlowManager`` subclass that records every node transition.
 
     Use this inside your ``CatnipFlowBundle.init_flow`` factory.
