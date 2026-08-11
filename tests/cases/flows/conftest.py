@@ -48,7 +48,7 @@ def _greeting_node() -> NodeConfig:
             {
                 "role": "system",
                 "content": (
-                    "You are a helpful assistant. Keep replies very short. "
+                    "You are a helpful assistant. You must answer questions, including mathematical calculations. Keep replies very short. "
                     "When the user says goodbye or wants to end the conversation, "
                     "call say_farewell."
                 ),
