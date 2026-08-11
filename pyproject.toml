@@ -35,19 +35,19 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-judge-gemini = ['google-genai >=1.0.0']
-judge-anthropic = ['anthropic >=0.109.0']
-judge-openai = ['openai >=2.0.0']
+judge-gemini = ['google-genai >=2.17.0']
+judge-anthropic = ['anthropic >=0.121.0']
+judge-openai = ['openai >=2.53.0']
 
 [project.entry-points.pytest11]
 pytest_catnip = "pytest_catnip.plugin"
 
 [tool.poetry.group.dev.dependencies]
-mypy = "2.1.0"
-ruff = "0.15.15"
+mypy = "2.3.0"
+ruff = "0.16.2"
 pytest-cov = "7.1.0"
 ipdb = "0.13.13"
-commitizen = "4.16.3"
+commitizen = "4.17.0"
 mkdocs-material = "9.7.6"
 codespell = "2.4.2"
 pre-commit = "4.6.0"
