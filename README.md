@@ -2,12 +2,8 @@
 
 <img alt="lgtm-logo" width="150" src="https://raw.githubusercontent.com/elementsinteractive/pytest-catnip/main/assets/logo-small.png">
 
-
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
-
 ![Python Version](https://img.shields.io/badge/python-3.13%2B-blue?logo=python&logoColor=yellow)
+[![PyPI version](https://img.shields.io/pypi/v/pytest-catnip?logo=python&logoColor=f5f5f5)](https://pypi.org/project/pytest-catnip/)
 
 **pytest-catnip** is a pytest plugin for integration-testing [pipecat](https://github.com/pipecat-ai/pipecat) voicebots declaratively, using plain YAML files.
 
@@ -623,10 +619,6 @@ configuring pre-commit to execute some of them can be beneficial to reduce late 
 just pre-commit
 ```
 
-> [!note] 🔗 Useful links
-> - [API Development Guidelines](https://www.notion.so/msdevelopment/Development-Guidelines-623677e75f69473abc743ce1d381eb6b)
->
-> - [Code Review Guidelines](https://www.notion.so/msdevelopment/Code-Review-Guidelines-82023d1814b442e486ed38e648c5d86e)
 ## Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
