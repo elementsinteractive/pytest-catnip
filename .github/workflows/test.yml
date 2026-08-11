@@ -53,6 +53,8 @@ jobs:
         run: poetry install --all-extras
 
       - name: Test with pytest
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
           just test-all
 

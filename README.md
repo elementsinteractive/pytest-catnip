@@ -1,8 +1,6 @@
 # pytest-catnip
 
-<p align="center">
-  <img alt="lgtm-logo" width="150" src="https://raw.githubusercontent.com/elementsinteractive/pytest-catnip/main/assets/logo-small.png">
-</p>
+<img alt="lgtm-logo" width="150" src="https://raw.githubusercontent.com/elementsinteractive/pytest-catnip/main/assets/logo-small.png">
 
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
