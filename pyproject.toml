@@ -1,6 +1,6 @@
 [project]
 name = "pytest-catnip"
-version = "0.7.0"
+version = "0.7.1"
 requires-python = ">=3.13,<4"
 description = "pytest plugin for testing pipecat voicebots declaratively"
 authors = [
@@ -152,7 +152,7 @@ exclude_lines = [
 [tool.commitizen]
 version_files = ["pyproject.toml:^version"]
 name = "cz_customize"
-version = "0.7.0"
+version = "0.7.1"
 tag_format = "v$version"
 
 [tool.commitizen.customize]
