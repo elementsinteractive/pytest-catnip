@@ -4,7 +4,7 @@ version = "0.6.1"
 requires-python = ">=3.13,<4"
 description = "pytest plugin for testing pipecat voicebots declaratively"
 authors = [
-    {name = "Sergio Castillo Lara", email = "sergio.lara@groupinteractive.es"},
+    {name = "Sergio Castillo Lara", email = "s.cast.lara@gmail.com"},
     {name = "Rooni"},
 ]
 dependencies = [

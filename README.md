@@ -1,4 +1,10 @@
 # pytest-catnip
+
+<p align="center">
+  <img alt="lgtm-logo" width="150" src="https://raw.githubusercontent.com/elementsinteractive/pytest-catnip/main/assets/logo-small.png">
+</p>
+
+
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
@@ -67,12 +73,6 @@ Tests are written as YAML files — no Python boilerplate for each scenario. The
 
 ```sh
 pip install pytest-catnip
-```
-
-For [pipecat-flows](https://github.com/pipecat-ai/pipecat-flows) support (flow-state assertions):
-
-```sh
-pip install "pytest-catnip[flows]"
 ```
 
 **Requirements:** Python 3.13+, pipecat-ai ≥ 1.3.0
@@ -353,13 +353,7 @@ If your bot uses [pipecat-flows](https://github.com/pipecat-ai/pipecat-flows) fo
 - That the whole flow node path matches expectations using `expect_flow_nodes`.
 
 You can use `expect_flow_state` when you are interested in each phase's node, while `expect_flow_nodes` is for asserting
-a specific path for the whole test case, without actually caring about when those node transitions happen. 
-
-Install the optional dependency:
-
-```sh
-pip install "pytest-catnip[flows]"
-```
+a specific path for the whole test case, without actually caring about when those node transitions happen.
 
 Instead of returning a plain `Pipeline`, your factory returns a `CatnipFlowBundle`:
 
