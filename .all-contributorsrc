@@ -1,0 +1,37 @@
+{
+  "projectName": "pytest-catnip",
+  "projectOwner": "groupinteractive",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 50,
+  "commit": false,
+  "commitConvention": "angular",
+  "contributors": [
+    {
+      "login": "scastlara",
+      "name": "Sergio Castillo",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7606872?v=4",
+      "profile": "https://github.com/scastlara",
+      "contributions": [
+        "code",
+        "ideas",
+        "maintenance"
+      ]
+    },
+    {
+      "login": "Rooni",
+      "name": "Rooni",
+      "avatar_url": "https://avatars.githubusercontent.com/u/916242?v=4",
+      "profile": "https://github.com/Rooni",
+      "contributions": [
+        "code",
+        "ideas"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "linkToUsage": true
+}
