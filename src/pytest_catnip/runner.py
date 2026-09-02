@@ -337,16 +337,15 @@ async def _assert_post_phase(
                 f"\n[{case_path}] Phase {phase_idx}: reply doesn't match {pattern!r}.\n  Reply: {reply[:300]!r}"
             )
 
-    judge_coros = []
-    for judge_prompt in phase.expect_llm_judge or []:
-        judge_coros.append(llm_judge_function(reply, judge_prompt))
+    judge_expectations = phase.expect_llm_judge or []
+    judge_coros = [llm_judge_function(reply, judge_prompt) for judge_prompt in judge_expectations]
     if judge_coros:
         results = await asyncio.gather(*judge_coros)
-        for passed, reason in results:
+        for i, (passed, reason) in enumerate(results):
             if not passed:
                 raise AssertionError(
                     f"\n[{case_path}] Phase {phase_idx}: LLM judge failed.\n"
-                    f"  Judge prompt: {judge_prompt!r}\n"
+                    f"  Judge prompt: {judge_expectations[i]!r}\n"
                     f"  Bot reply:   {reply!r}\n"
                     f"  Judge reason: {reason!r}"
                 )
