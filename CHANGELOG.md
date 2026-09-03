@@ -1,3 +1,13 @@
+## v0.7.2 (2026-09-03)
+
+### Fix
+
+- judge failure now prints the correct failed expectation (#9)
+
+### Technical
+
+- bump dependencies (#7)
+
 ## v0.7.1 (2026-08-11)
 
 ### Docs
