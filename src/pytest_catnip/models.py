@@ -64,3 +64,4 @@ class CatnipTestCaseData(BaseModel):
 
     # Expectations
     expect_flow_nodes: list[str] | None = None
+    expect_llm_judge: list[str] | None = None

@@ -169,6 +169,7 @@ Each YAML file becomes a single pytest test item, fully integrated with pytest's
 | `phases` | `list` | required | Ordered list of conversation turns. |
 | `reliability` | `object` | `null` | Reliability block — see [Reliability Testing](#reliability-testing). |
 | `expect_flow_nodes` | `list[str] \| null` | `null` | Expected pipecat-flow node path. Requires [flows integration](#pipecat-flows-integration)|
+| `expect_llm_judge` | `list[str] \| null` | `null` | List of natural language expectations evaluated dynamically by an LLM. See [`llm_judge_function`](#llm_judge_function). |
 
 ### Phase fields
 
@@ -189,6 +190,8 @@ name: book-appointment
 description: User books a dental appointment
 markers: [integration]
 skip: false
+expect_llm_judge:
+  - "The bot remains polite during the whole conversation."
 
 phases:
   - send: "I'd like to book a cleaning for next Tuesday at 10am."
@@ -273,13 +276,15 @@ Predicate used to detect whether the bot's reply is a confirmation question. If 
 
 Used to power the `expect_llm_judge` phase assertion. By default, attempting to use `expect_llm_judge` without overriding this fixture will raise a `NotImplementedError`.
 
+You can use this expectation at the phase level (the bot reply at that level will be evaluated), or at the root level (the whole conversation will be evaluated).
+
 Override this in your `conftest.py` to connect an LLM client. The fixture must return an async callable that takes `(actual_reply: str, expected_judge_prompt: str)` and returns a tuple of `(passed: bool, reason: str)`.
 
 `pytest-catnip` provides several presets to use as a judge:
-  - OpenAI judge (install with extra `pytest-catnip[judge-openai]`).
-  - Gemini judge (install with extra `pytest-catnip[judge-gemini]`).
-  - Anthropic judge (install with extra `pytest-catnip[judge-anthropic]`).
 
+- OpenAI judge (install with extra `pytest-catnip[judge-openai]`).
+- Gemini judge (install with extra `pytest-catnip[judge-gemini]`).
+- Anthropic judge (install with extra `pytest-catnip[judge-anthropic]`).
 
 Use it like so:
 
