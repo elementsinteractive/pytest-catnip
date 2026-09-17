@@ -98,7 +98,7 @@ class CatnipTestInitializer:
         self.pipeline_factory = pipeline_factory
 
     async def initialize_test(self, case_data: CatnipTestCaseData) -> _TestRunnerElements:
-        """Initialize the test environment for runing a given test case."""
+        """Initialize the test environment for running a given test case."""
         bundle = self.pipeline_factory()
 
         if isinstance(bundle, CatnipFlowBundle):
