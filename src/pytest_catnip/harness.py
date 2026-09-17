@@ -119,6 +119,11 @@ class CatnipSession:
         """Alias for ``transcript``."""
         return self.transcript
 
+    @property
+    def formatted_log(self) -> str:
+        """Return a human-readable formatted transcript."""
+        return "\n".join(f"[{kind.name}] {text}" for kind, text in self.transcript)
+
     async def send(self, text: str, timeout: float = DEFAULT_TURN_TIMEOUT) -> str:
         """Inject *text* as a user utterance and block until the bot replies.
 

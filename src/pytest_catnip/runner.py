@@ -167,7 +167,12 @@ async def _run_once(
                         is_confirmation_question,
                     )
 
-            _assert_post_case(flow_manager, case_data.expect_flow_nodes)
+            await _assert_post_case(
+                case_data,
+                session=session,
+                flow_manager=flow_manager,
+                llm_judge_function=llm_judge_function,
+            )
             logger.debug("[%s] Scenario complete.", case_data.name)
 
     except Exception as e:  # noqa: BLE001
@@ -337,18 +342,14 @@ async def _assert_post_phase(
                 f"\n[{case_path}] Phase {phase_idx}: reply doesn't match {pattern!r}.\n  Reply: {reply[:300]!r}"
             )
 
-    judge_expectations = phase.expect_llm_judge or []
-    judge_coros = [llm_judge_function(reply, judge_prompt) for judge_prompt in judge_expectations]
-    if judge_coros:
-        results = await asyncio.gather(*judge_coros)
-        for i, (passed, reason) in enumerate(results):
-            if not passed:
-                raise AssertionError(
-                    f"\n[{case_path}] Phase {phase_idx}: LLM judge failed.\n"
-                    f"  Judge prompt: {judge_expectations[i]!r}\n"
-                    f"  Bot reply:   {reply!r}\n"
-                    f"  Judge reason: {reason!r}"
-                )
+    if phase.expect_llm_judge:
+        await _assert_llm_judge(
+            llm_judge_function,
+            text=f"[{TurnLogKind.BOT.name}] {reply}",
+            judge_expectations=phase.expect_llm_judge,
+            case_path=case_path,
+            phase_idx=phase_idx,
+        )
 
     if phase.expect_flow_state is not None:
         if flow_manager is None:
@@ -365,16 +366,52 @@ async def _assert_post_phase(
             )
 
 
-def _assert_post_case(flow_manager: CatnipFlowTracker | None, expect_flow_nodes: list[str] | None) -> None:
+async def _assert_post_case(
+    case_data: CatnipTestCaseData,
+    *,
+    session: CatnipSession,
+    flow_manager: CatnipFlowTracker | None,
+    llm_judge_function: Callable[[str, str], Awaitable[tuple[bool, str]]],
+) -> None:
     """Case-level assertions after all phases complete."""
-    if expect_flow_nodes is None:
-        return
+    if case_data.expect_flow_nodes is not None:
+        if flow_manager is None:
+            raise pytest.UsageError(
+                "'expect_flow_nodes' requires the 'catnip_pipeline' fixture to return a 'CatnipFlowBundle'. "
+                "See pytest_catnip.flows for instructions."
+            )
+        if flow_manager.node_history != case_data.expect_flow_nodes:
+            raise AssertionError(
+                f"Expected flow node history {case_data.expect_flow_nodes!r}, got {flow_manager.node_history!r}."
+            )
 
-    if flow_manager is None:
-        raise pytest.UsageError(
-            "'expect_flow_nodes' requires the 'catnip_pipeline' fixture to return a 'CatnipFlowBundle'. "
-            "See pytest_catnip.flows for instructions."
+    if case_data.expect_llm_judge:
+        await _assert_llm_judge(
+            llm_judge_function,
+            text=session.formatted_log,
+            judge_expectations=case_data.expect_llm_judge,
+            case_path=case_data.source_path,
         )
 
-    if flow_manager.node_history != expect_flow_nodes:
-        raise AssertionError(f"Expected flow node history {expect_flow_nodes!r}, got {flow_manager.node_history!r}.")
+
+async def _assert_llm_judge(
+    llm_judge_function: Callable[[str, str], Awaitable[tuple[bool, str]]],
+    *,
+    text: str,
+    judge_expectations: list[str],
+    case_path: pathlib.Path,
+    phase_idx: int | None = None,
+) -> None:
+    judge_coros = [llm_judge_function(text, judge_prompt) for judge_prompt in judge_expectations or []]
+    if judge_coros:
+        results = await asyncio.gather(*judge_coros)
+        for i, (passed, reason) in enumerate(results):
+            if not passed:
+                phase_info = f"Phase {phase_idx}: " if phase_idx is not None else ""
+                raise AssertionError(
+                    f"\n[{case_path}] {phase_info} LLM judge failed.\n"
+                    f"  Judge prompt: {judge_expectations[i]!r}\n"
+                    f"  Conversation:   {text!r}\n"
+                    f"  Judge reason: {reason!r}"
+                )
+    return None
