@@ -1,3 +1,13 @@
+## v0.8.0 (2026-09-18)
+
+### Feat
+
+- add llm judge functionality for the whole conversation (#10)
+
+### Refactor
+
+- cleanup runner module (#11)
+
 ## v0.7.2 (2026-09-03)
 
 ### Fix
