@@ -100,3 +100,39 @@ def test_missing_turn_tracker_raises_usage_error(cases_dir: pathlib.Path, pytest
     result = pytester.runpytest()
     assert result.ret == pytest.ExitCode.TESTS_FAILED
     result.stdout.fnmatch_lines(["*CatnipTurnTracker*"])
+
+
+@pytest.mark.parametrize(
+    ("barge_in", "message"),
+    [
+        ("{after: foo, after_words: 3}", "exactly one"),
+        ("{}", "exactly one"),
+        ("{after_words: 0}", "greater than or equal to 1"),
+        ("{after: '('}", "not a valid regex"),
+        ("{after_word: 3}", "Unknown field"),
+    ],
+)
+def test_invalid_barge_in_reports_usage_error(
+    cases_dir: pathlib.Path, pytester: pytest.Pytester, barge_in: str, message: str
+) -> None:
+    (cases_dir / "test_bad.yaml").write_text(
+        f"name: bad\nphases:\n  - send: hi\n  - send: stop\n    barge_in: {barge_in}\n"
+    )
+    result = pytester.runpytest("--collect-only")
+    assert result.ret == pytest.ExitCode.INTERRUPTED
+    result.stdout.fnmatch_lines([f"*phases -> 1 -> barge_in*{message}*"])
+
+
+def test_barge_in_on_first_phase_reports_usage_error(cases_dir: pathlib.Path, pytester: pytest.Pytester) -> None:
+    (cases_dir / "test_bad.yaml").write_text("name: bad\nphases:\n  - send: hi\n    barge_in: true\n")
+    result = pytester.runpytest("--collect-only")
+    assert result.ret == pytest.ExitCode.INTERRUPTED
+    result.stdout.fnmatch_lines(["*first phase*"])
+
+
+def test_valid_barge_in_collects(cases_dir: pathlib.Path, pytester: pytest.Pytester) -> None:
+    (cases_dir / "test_ok.yaml").write_text(
+        "name: ok\nphases:\n  - send: hi\n  - send: stop\n    barge_in:\n      after_words: 4\n"
+    )
+    result = pytester.runpytest("--collect-only")
+    assert result.ret == pytest.ExitCode.OK

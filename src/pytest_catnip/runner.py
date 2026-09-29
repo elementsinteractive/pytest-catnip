@@ -8,11 +8,13 @@ from dataclasses import dataclass
 from typing import Any
 
 import pytest
+from pipecat.frames.frames import InterruptionFrame
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.worker import PipelineWorker
+from pipecat.processors.aggregators.llm_response_universal import LLMAssistantAggregator
 from pipecat.workers.runner import WorkerRunner
 from pytest_catnip.flows import CatnipFlowBundle, CatnipFlowTracker
-from pytest_catnip.harness import CatnipSession, CatnipTurnTracker, TurnLogKind, _ToolCall
+from pytest_catnip.harness import BargeInMissedError, CatnipSession, CatnipTurnTracker, TurnLogKind, _ToolCall
 from pytest_catnip.models import CatnipTestCaseData, CatnipTestPhaseData, ToolExpectation
 
 logger = logging.getLogger(__name__)
@@ -123,7 +125,10 @@ class CatnipTestInitializer:
         )
 
         worker = PipelineWorker(pipeline)
-        session = CatnipSession(worker=worker, tracker=turn_tracker)
+        assistant_aggregator = next((p for p in pipeline.processors if isinstance(p, LLMAssistantAggregator)), None)
+        turn_tracker.watch_assistant_aggregator(assistant_aggregator)
+        turn_tracker.set_interrupter(lambda: worker.queue_frame(InterruptionFrame()))
+        session = CatnipSession(worker=worker, tracker=turn_tracker, assistant_aggregator=assistant_aggregator)
 
         worker_runner = WorkerRunner(handle_sigint=False)
         await worker_runner.add_workers(worker)
@@ -327,6 +332,7 @@ class CatnipTestRunner:
                     reply, triggered_calls = await self._execute_phase_exchanges(
                         phase=phase,
                         phase_idx=phase_idx,
+                        next_phase=case_data.phases[phase_idx + 1] if phase_idx + 1 < len(case_data.phases) else None,
                         case_data=case_data,
                         session=runner_elems.session,
                         tracker=runner_elems.turn_tracker,
@@ -420,20 +426,45 @@ class CatnipTestRunner:
         *,
         phase: CatnipTestPhaseData,
         phase_idx: int,
+        next_phase: CatnipTestPhaseData | None,
         case_data: CatnipTestCaseData,
         session: CatnipSession,
         tracker: CatnipTurnTracker,
     ) -> tuple[str, list[_ToolCall]]:
         """Send the phase utterance, auto-confirming bot questions up to the budget.
 
+        If the next phase has a ``barge_in``, the bot's first reply is interrupted at its trigger
+        and auto-confirm is skipped.
+
         Returns ``(final_reply, triggered_tool_calls)``.
         """
         tools_snapshot = len(tracker.tool_calls)
-        reply = await session.send(phase.send, timeout=case_data.turn_timeout)
+        barge_in = next_phase.barge_in if next_phase is not None else None
+        try:
+            reply = await session.send(phase.send, timeout=case_data.turn_timeout, interrupt_reply_with=barge_in)
+        except BargeInMissedError as e:
+            raise AssertionError(
+                f"\n[{case_data.source_path}] Phase {phase_idx + 1}: barge_in could not interrupt phase {phase_idx}'s reply.\n"
+                f"  Reason:    {e.reason}\n"
+                f"  Bot reply: {e.reply}\n"
+                f"  Hint: the reply must run past the trigger point; adjust barge_in or the prompt."
+            ) from None
         logger.debug("[%s] phase=%d BOT: %s", case_data.name, phase_idx, reply)
 
+        if session.last_reply_interrupted:
+            problem = await session.verify_interrupted_context(reply)
+            if problem is not None:
+                raise AssertionError(
+                    f"\n[{case_data.source_path}] Phase {phase_idx}: the interruption did not truncate the LLM context.\n"
+                    f"  Reason: {problem}"
+                )
+
         confirm_count = 0
-        while confirm_count < case_data.max_auto_confirm and self.is_confirmation_question(reply):
+        while (
+            not session.last_reply_interrupted
+            and confirm_count < case_data.max_auto_confirm
+            and self.is_confirmation_question(reply)
+        ):
             confirm_count += 1
             logger.debug(
                 "[%s] phase=%d auto-confirm %d/%d -> %r",

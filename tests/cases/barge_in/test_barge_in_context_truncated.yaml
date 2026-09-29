@@ -1,0 +1,14 @@
+name: barge-in-context-truncated
+description: >
+  The interrupted reply must be the last thing the bot said, as far as its own
+  context goes: the harness verifies the assistant message holds only the spoken
+  part, and the bot must be able to refer to it.
+
+phases:
+  - send: "Count from one to twenty in words, separated by commas."
+
+  - send: "Stop. What was the last number you said?"
+    barge_in:
+      after: "five"
+    expect_llm_judge:
+      - "The bot says the last number it said was five, and not a larger number."

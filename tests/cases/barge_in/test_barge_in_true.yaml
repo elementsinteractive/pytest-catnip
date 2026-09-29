@@ -1,0 +1,12 @@
+name: barge-in-true
+description: The shorthand `barge_in true` interrupts right after the first word.
+
+phases:
+  - send: "Tell me about the moon."
+    expect_reply_contains:
+      - "^\\S+$"
+
+  - send: "Never mind. What is 3 + 5?"
+    barge_in: true
+    expect_reply_contains:
+      - "8|eight"

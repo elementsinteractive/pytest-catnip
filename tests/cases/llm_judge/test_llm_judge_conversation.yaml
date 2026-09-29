@@ -3,8 +3,8 @@ description: Tests the integration of LLM-based judge assertions for whole conve
 skip: false
 
 expect_llm_judge:
-  - "The bot should provide interesting facts about dogs"
-  - "The bot should provide interesting facts about cats"
+  - "The bot should provide interesting facts about dogs at some point"
+  - "The bot should provide interesting facts about cats at some point"
   - "The bot never provides any information about dungeons and dragons"
 
 phases:

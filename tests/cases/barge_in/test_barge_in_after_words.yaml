@@ -1,0 +1,18 @@
+name: barge-in-after-words
+description: >
+  The user interrupts a long explanation after a few words and asks something
+  unrelated. The bot must drop the explanation and answer the new question.
+
+phases:
+  - send: "Explain in detail how photosynthesis works."
+
+  - send: "Stop. What is 2 + 2?"
+    barge_in:
+      after_words: 8
+    expect_reply_contains:
+      - "4|four"
+    expect_llm_judge:
+      - "The bot answers the arithmetic question instead of continuing the photosynthesis explanation."
+
+expect_llm_judge:
+  - "The first bot reply is cut off mid-explanation and never reaches 'Point three'."

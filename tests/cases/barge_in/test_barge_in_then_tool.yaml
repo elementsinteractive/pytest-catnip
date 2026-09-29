@@ -1,0 +1,17 @@
+name: barge-in-then-tool
+description: >
+  The user cuts the bot off mid-answer and immediately asks for something that needs
+  a tool. The bot must call the tool for the new request.
+
+phases:
+  - send: "Tell me all about how pizza dough is made."
+
+  - send: "Actually, how much is a large pizza?"
+    barge_in:
+      after_words: 6
+    expect_tools:
+      - name: lookup_price
+        args:
+          size: large
+    expect_reply_contains:
+      - "12"
