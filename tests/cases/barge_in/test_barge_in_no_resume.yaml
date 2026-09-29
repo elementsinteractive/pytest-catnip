@@ -1,0 +1,16 @@
+name: barge-in-no-resume
+description: >
+  After being interrupted the bot must not resume or repeat what it was saying.
+  Judged on the whole conversation, which marks the cut reply as interrupted.
+
+phases:
+  - send: "Give me a detailed overview of the Roman Empire."
+
+  - send: "Hold on, what's the capital of France?"
+    barge_in:
+      after: "point two"
+    expect_reply_contains:
+      - "paris"
+
+expect_llm_judge:
+  - "After the interruption the bot answers about France and does not resume or repeat the Roman Empire overview."

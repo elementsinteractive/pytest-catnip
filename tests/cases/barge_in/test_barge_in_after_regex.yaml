@@ -1,0 +1,19 @@
+name: barge-in-after-regex
+description: >
+  The user interrupts once the bot has started its second point. The first reply
+  keeps everything up to and including the match and nothing after it.
+
+phases:
+  - send: "List the benefits of exercise."
+    expect_reply_contains:
+      - "point one"
+      - "point two$"
+
+  - send: "Sorry, quick question: what colour is the sky on a clear day?"
+    barge_in:
+      after: "point two"
+    expect_reply_contains:
+      - "blue"
+
+expect_llm_judge:
+  - "The bot never gets to 'Point three' in its first reply."

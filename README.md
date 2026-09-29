@@ -180,6 +180,7 @@ Each entry in `phases` represents one user message and the assertions to run aga
 | `send` | `str` | required | The user utterance to inject into the pipeline. |
 | `expect_reply_contains` | `list[str]` | `[]` | Every string in this list must appear (case-insensitive regex) in the bot's reply. |
 | `expect_llm_judge` | `list[str] \| null` | `null` | List of natural language expectations evaluated dynamically by an LLM. See [`llm_judge_function`](#llm_judge_function). |
+| `barge_in` | `bool \| object` | `false` | Interrupt the **previous** phase's bot reply mid-stream, then send this phase's `send`. See [Barge-in](#barge-in). |
 | `expect_tools` | `list \| null` | `null` | Exact set of tool/function names the LLM must call during this turn. Entries can be plain names or objects that also assert the call **arguments** — see [below](#asserting-tool-call-arguments). `null` skips the assertion. |
 | `expect_flow_state` | `str \| null` | `null` | Expected pipecat-flows node name after this phase. Requires [flows integration](#pipecat-flows-integration). |
 
@@ -230,6 +231,36 @@ Semantics:
 - For entries with `args`, the listed keys are matched as a **subset** of the
   actual call arguments — keys you don't list are ignored, and each listed value
   must compare equal to the actual argument.
+
+#### Barge-in
+
+> **Experimental:** the syntax and behaviour may change in a future release.
+
+Set `barge_in` on a phase to make the user interrupt the bot while it is still answering the **previous** phase. Use it to check that the bot drops the old answer and handles the new message.
+
+```yaml
+phases:
+  - send: "Read me the full cancellation policy."
+    expect_reply_contains:
+      - "cancel"                 # checked against the part of the reply before the interruption
+
+  - send: "Stop, just tell me the fee."
+    barge_in:
+      after: "within 24 hours"   # interrupt right after this regex matches...
+      # after_words: 8           # ...or after the 8th word
+    expect_reply_contains:
+      - "fee"
+```
+
+Semantics:
+
+- `barge_in: true` interrupts after the first word. Otherwise set exactly one of `after` (a case-insensitive regex) or `after_words`.
+- The bot's reply is cut at that point: it only "said" what came before, and that is all it remembers.
+- The test fails if the reply ends before the trigger is reached (regex not found, fewer words than `after_words`).
+- Only the first reply to a phase is interrupted, so [auto-confirm](#autoconfirm_response) is skipped for it.
+- Invalid settings (both triggers, a bad regex, `barge_in` on the first phase) are reported when the file is collected.
+
+> **Note:** the interruption is triggered by a position in the reply text, not by real audio. Voice activity detection, interruption strategies and TTS timing are not tested; use an end-to-end test for those.
 
 #### Mocking and Setup (Custom Fixtures)
 
